@@ -1,4 +1,8 @@
 (ns tala.db)
 
 (def default-db
-  {:name "re-frame"})
+  {:active-panel :login
+   :user nil
+   :users {}
+   :channels {}
+   :messages {}})

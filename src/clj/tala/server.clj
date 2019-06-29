@@ -14,9 +14,8 @@
 
 (defonce main-chan (async/chan))
 (defonce main-mult (async/mult main-chan))
-(defonce app-state (atom {:users
-                          :messages
-                          :channels}))
+(defonce app-state (atom {:users {}
+                          :channels {}}))
 
 
 (defn ws-handler
@@ -32,12 +31,17 @@
                             (async/>! ws-ch message)  ;; Send to all clients
                             (recur))
                           (async/close! ws-ch)))
-          ws-ch ([{:keys [message] :as all}]
+          ws-ch ([{:keys [message]}]
                  (if message
-                   (do
-                     (async/>! ws-ch {:status "OK"})  ;; Send ok status back to source client
-                     (async/>! main-chan message)     ;; Put on main-chan
-                     (recur))
+                   (let [m-type (:m-type message)
+                         msg (:msg message)]
+                     (case m-type
+                       :init-user (do
+                                    (swap! app-state assoc-in [:users] msg)
+                                    (async/>! ws-ch (merge {:m-type :init-user}
+                                                           @app-state))
+                                    (async/>! main-chan {:m-type :new-user
+                                                         :msg msg}))))
                    (do
                      (async/untap main-mult clients-chan)
                      (async/>! main-chan {:m-type :user-left

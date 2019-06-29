@@ -1,4 +1,46 @@
 
+* Message protocol
+
+   #+BEGIN_SRC clojure :results output code :exports none
+     ;; New client sends
+     {:m-type :init-user
+      :msg {#uuid "e6b4f79b-e781-46d3-9e0e-d38f583d1f04" {}}
+      :user-name "Username"
+      :user-id #uuid "djsakl-dakl-dkals"}
+
+     ;; Server responds to new client
+     {:m-type :init-user
+      :users {map with users}
+      :channels {map with channels}}
+
+     ;; Server sends to all clients
+     {:m-type :new-user
+      :user-name "Username"
+      :user-id #uuid "djsakl-dakl-dkals"}
+
+     {:m-type :direct-message
+      :from-user-id #uuid "djsakl-dakl-dkals"
+      :to-user-id   #uuid "kljfsf-dakl-dkals"
+      :msg "Hejsan"}
+
+     {:m-type :channel-message
+      :user-id #uuid "djsakl-dakl-dkals"
+      :channel-id #uuid "sdljflks-jdlsjalsd-iewr-sdajlk"
+      :user-msg "Hey Channel"}
+
+     ;; Sends to all clients
+     {:m-type :user-left
+      :user-id #uuid "djsakl-dakl-dkals"}
+   #+END_SRC
+
+* User
+
+  #+BEGIN_SRC clojure :results output code :exports none
+    {#uuid "d06e0015-5c5a-4b34-8950-d18fa0582daf" {:user-name "Username"
+                                                   :user-id #uuid "d06e0015-5c5a-4b34-8950-d18fa0582daf"}}
+
+  #+END_SRC
+
 * Datomic
 
 #+BEGIN_SRC shell :results output code :exports none

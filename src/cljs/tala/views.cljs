@@ -10,7 +10,10 @@
 (defn message-view []
   (let [messages @(re-frame/subscribe [::subs/messages])]
     [:div
-     [:h4 "Messages"]]))
+     [:h4 "Messages"]
+     (into [:ul] ;; användare mapv istället för for
+           (for [{:keys [msg-id msg datetime]} messages]
+             ^{:key msg-id} [:li (str datetime " | " msg)]))]))
 
 (defn users-view []
   (let [users @(re-frame/subscribe [::subs/users])]
@@ -20,11 +23,29 @@
            (for [{:keys [user-id user-name]} users]
              ^{:key user-id} [:li user-name]))]))
 
+(defn input-view []
+  (let [internal-state (reagent.core/atom "")]
+    (fn []
+      [:div
+       [:form {:on-submit (fn [x]
+                            (.preventDefault x)
+                            (dispatch [::events/send-channal-msg @internal-state]))}
+        [:input {:type "text"
+                 :auto-focus true
+                 :value @internal-state
+                 :placeholder ""
+                 :on-change #(let [value (-> % .-target .-value)]
+                               (reset! internal-state value))}]
+        [:br]
+        [:button {:type "submit"
+                  :class "button-primary"} "Send"]]])))
+
 (defn chat-view []
   [:div
    [:h2 "Chat"]
    [users-view]
-   [message-view]])
+   [message-view]
+   [input-view]])
 
 (defn login-view []
   (let [internal-state (reagent.core/atom "")]

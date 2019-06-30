@@ -33,6 +33,7 @@
           :init-user (re-frame/dispatch [::add-users (:users message)])
           :new-user (re-frame/dispatch [::add-user (:data message)])
           :user-left (re-frame/dispatch [::remove-user (:data message)])
+          :channel-message (re-frame/dispatch [::add-message (:data message)])
           :test (js/console.log "john-debug:" (clj->js (:data message))))
         (recur))
       (println "Websocket closed"))))
@@ -52,6 +53,10 @@
   (fn [cofx _]
     (assoc cofx :uuid (medley/random-uuid))))
 
+(re-frame/reg-cofx
+  ::user
+  (fn [{:keys [db] :as cofx} _]
+    (assoc cofx :user (:user db))))
 
 (re-frame/reg-cofx
  ::now
@@ -90,17 +95,16 @@
        (update :users conj user))))
 
 (re-frame/reg-event-db
+ ::add-message
+ (fn [db [_ user]]
+   (-> db
+       (update :messages conj user))))
+
+(re-frame/reg-event-db
  ::remove-user
  (fn [db [_ user]]
    (update db :users (fn [x] (remove #(= % user) x)))))
 
-
-(comment
-  (update {:users [{:a :a}]}
-          :users
-          (fn [x] (remove #(= % {:a :a}) x))
-          )
-  )
 
 (re-frame/reg-event-db
  ::add-users
@@ -108,6 +112,18 @@
    (if (empty? users)
      db
      (update db :users concat users))))
+
+(re-frame/reg-event-fx
+ ::send-channal-msg
+ [(re-frame/inject-cofx ::uuid)
+  (re-frame/inject-cofx ::now)
+  (re-frame/inject-cofx ::user)]
+ (fn [{:keys [db now uuid user] :as cofx} [_ message]]
+   (let [data {:msg message
+               :msg-id uuid
+               :datetime now
+               :user-id (:user-id user)}]
+     {::ws-send {:m-type :channel-message :data data}})))
 
 
 (re-frame/reg-event-fx

@@ -22,7 +22,8 @@
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
 
   :figwheel {:css-dirs ["resources/public/css"]
-             :ring-handler tala.server/dev-handler}
+             :ring-handler tala.server/dev-handler
+             :server-logfile false}
 
   :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}
 

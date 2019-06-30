@@ -7,9 +7,24 @@
    [tala.subs :as subs]
    [tala.utils :refer [silent]]))
 
+(defn message-view []
+  (let [messages @(re-frame/subscribe [::subs/messages])]
+    [:div
+     [:h4 "Messages"]]))
+
+(defn users-view []
+  (let [users @(re-frame/subscribe [::subs/users])]
+    [:div
+     [:h4 "Users"]
+     (into [:ul] ;; användare mapv istället för for
+           (for [{:keys [user-id user-name]} users]
+             ^{:key user-id} [:li user-name]))]))
+
 (defn chat-view []
-  [:div "Chat"]
-  )
+  [:div
+   [:h2 "Chat"]
+   [users-view]
+   [message-view]])
 
 (defn login-view []
   (let [internal-state (reagent.core/atom "")]

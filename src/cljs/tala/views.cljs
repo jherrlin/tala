@@ -2,10 +2,18 @@
   (:require
    [day8.re-frame-10x.view.event :as event]
    [goog.dom.forms :as gforms]
+   [goog.i18n.DateTimeFormat]
    [re-frame.core :refer [dispatch] :as re-frame]
    [tala.events :as events]
    [tala.subs :as subs]
    [tala.utils :refer [silent]]))
+
+(defn datetime-format [datetiem]
+  (when (inst? datetiem)
+    (.format
+     (goog.i18n.DateTimeFormat. "yyyy-MM-dd HH:MM")
+     datetiem)))
+
 
 (defn message-view []
   (let [messages @(re-frame/subscribe [::subs/messages])]
@@ -13,12 +21,14 @@
      [:h4 "Messages"]
      (into [:ul] ;; användare mapv istället för for
            (for [{:keys [msg-id msg datetime]} messages]
-             ^{:key msg-id} [:li (str datetime " | " msg)]))]))
+             ^{:key msg-id} [:li (str (datetime-format datetime) " | " msg)]))]))
 
 (defn users-view []
-  (let [users @(re-frame/subscribe [::subs/users])]
+  (let [users @(re-frame/subscribe [::subs/users])
+        user @(re-frame/subscribe [::subs/user])]
     [:div
-     [:h4 "Users"]
+     [:h4 (str "Me: " (:user-name user))]
+     [:h4 "Users:"]
      (into [:ul] ;; användare mapv istället för for
            (for [{:keys [user-id user-name]} users]
              ^{:key user-id} [:li user-name]))]))

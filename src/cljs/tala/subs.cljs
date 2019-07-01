@@ -15,4 +15,12 @@
 (re-frame/reg-sub
  ::users
  (fn [db]
-   (:users db)))
+   (->> db
+        :users
+        (remove #(= (:user-id %)
+                    (->> db :user :user-id))))))
+
+(re-frame/reg-sub
+ ::user
+  (fn [db]
+   (:user db)))

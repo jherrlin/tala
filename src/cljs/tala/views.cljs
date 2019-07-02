@@ -6,6 +6,7 @@
    [re-frame.core :refer [dispatch] :as re-frame]
    [tala.events :as events]
    [tala.subs :as subs]
+   [tala.components :as components]
    [tala.utils :refer [silent]]))
 
 (defn datetime-format [datetiem]
@@ -13,7 +14,6 @@
     (.format
      (goog.i18n.DateTimeFormat. "yyyy-MM-dd HH:MM")
      datetiem)))
-
 
 (defn message-view []
   (let [messages @(re-frame/subscribe [::subs/messages])]
@@ -27,11 +27,11 @@
   (let [users @(re-frame/subscribe [::subs/users])
         user @(re-frame/subscribe [::subs/user])]
     [:div
-     [:h4 (str "Me: " (:user-name user))]
+     [:h4 (str "Me: " (:username user))]
      [:h4 "Users:"]
      (into [:ul] ;; användare mapv istället för for
-           (for [{:keys [user-id user-name]} users]
-             ^{:key user-id} [:li user-name]))]))
+           (for [{:keys [user-id username]} users]
+             ^{:key user-id} [:li username]))]))
 
 (defn input-view []
   (let [internal-state (reagent.core/atom "")]
@@ -57,22 +57,10 @@
    [message-view]
    [input-view]])
 
+
 (defn login-view []
-  (let [internal-state (reagent.core/atom "")]
-    (fn []
-      [:div
-       [:form {:on-submit (fn [x]
-                            (.preventDefault x)
-                            (dispatch [::events/login-user @internal-state]))}
-        [:input {:type "text"
-                 :auto-focus true
-                 :value @internal-state
-                 :placeholder "Pick a username"
-                 :on-change #(let [value (-> % .-target .-value)]
-                               (reset! internal-state value))}]
-        [:br]
-        [:button {:type "submit"
-                  :class "button-primary"} "Start chatting"]]])))
+  [:div
+   [components/input-form :login-form "login" #(dispatch [::events/login-user %1])]])
 
 (defn app-container []
   (case @(re-frame/subscribe [::subs/active-panel])

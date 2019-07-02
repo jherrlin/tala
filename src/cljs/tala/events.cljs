@@ -2,6 +2,8 @@
   (:require
    [chord.client :refer [ws-ch]]
    [cljs.core.async :as async :include-macros true]
+   [clojure.spec.alpha :as s]
+   [common.spec.messages :as message-spec]
    [day8.re-frame.tracing :refer-macros [fn-traced defn-traced]]
    [medley.core :as medley]
    [re-frame.core :as re-frame]
@@ -19,18 +21,57 @@
   [svr-chan]
   (async/go-loop []
     (when-let [msg (async/<! send-chan)]
-      (js/console.log "john-debug send-msgs:" (clj->js msg))
       (async/>! svr-chan msg)
       (recur))))
 
+
+(defmulti handle-message (fn [data] (:m-type data)))
+
+(defmethod handle-message :server->init-user [data]
+  (let [k ::message-spec/server->init-user]
+    (if (s/valid? k data)
+      (re-frame/dispatch [::add-users (:users data)])
+      (s/explain k data))))
+
+
+(defmethod handle-message :new-user [data]
+  (let [k ::message-spec/new-user]
+    (if (s/valid? k data)
+      (do
+        (re-frame/dispatch [::add-user data])
+        (re-frame/dispatch [::add-message {:datetime (js/Date.)
+                                           :msg (str "User joined: " (get-in data [:username]))
+                                           :msg-id (medley/random-uuid)}]))
+      (s/explain k data))))
+
+(defmethod handle-message :user-left [data]
+  (let [k ::message-spec/new-user]
+    (if (s/valid? k data)
+      (do
+        (re-frame/dispatch [::remove-user data])
+        (re-frame/dispatch [::add-message {:datetime (js/Date.)
+                                           :msg (str "User left: " (get-in data [:username]))
+                                           :msg-id (medley/random-uuid)}]))
+      (s/explain k data))))
+
+
+(defmethod handle-message :default [data]
+  (js/console.log "john-debug handle-message default:" data))
+
+
+
+;; bryt ut till ett egen ns
+;; multimethod här istället för case
+;; spec som validerar messages
 (defn- receive-msgs
   [svr-chan]
   (async/go-loop []
     (if-let [{:keys [message]} (<! svr-chan)]
       (do
-        (js/console.log "john-debug receive-msgs:" (clj->js message))
-        (case (:m-type message)
-          :init-user (re-frame/dispatch [::add-users (:users message)])
+        (js/console.log "john-debug receive-msgs:" message)
+        (handle-message message)
+        #_(case (:m-type message)
+          :init-user (handle-server-message message)
           :new-user (do (re-frame/dispatch [::add-user (:data message)])
                         (re-frame/dispatch [::add-message {:datetime (js/Date.)
                                                             :msg (str "User joined: " (get-in message [:data :user-name]))
@@ -95,6 +136,11 @@
    (update db :messages conj message)))
 
 (re-frame/reg-event-db
+ ::forms
+ (fn [db [_ k value]]
+   (assoc-in db [:forms k] value)))
+
+(re-frame/reg-event-db
  ::add-user
  (fn [db [_ user]]
    (-> db
@@ -109,7 +155,7 @@
 (re-frame/reg-event-db
  ::remove-user
  (fn [db [_ user]]
-   (update db :users (fn [x] (remove #(= % user) x)))))
+   (update db :users (fn [x] (remove #(= (:user-id %) (:user-id user)) x)))))
 
 
 (re-frame/reg-event-db
@@ -137,11 +183,19 @@
  [(re-frame/inject-cofx ::uuid)
   (re-frame/inject-cofx ::now)]
  (fn [{:keys [db now uuid] :as cofx} [_ username]]
-   (let [data {:user-name username
-              :user-id uuid}]
-     {::ws-init nil
-      ::ws-send {:m-type :init-user :data data}
-      :db (assoc db :user data :active-panel :chat)})))
+   (let [data {:id uuid
+               :m-type :init-user->server
+               :user-id uuid
+               :username username
+               :datetime now}]
+     (if (s/valid? ::message-spec/init-user->server data)
+       {::ws-init nil
+        ::ws-send {:m-type :init-user :data data}
+        :db (assoc db :user data :active-panel :chat)}
+       (do
+         (s/explain ::message-spec/init-user->server data)
+         {:db db})))))
+
 
 (re-frame/reg-event-fx
  ::send-to-channel
@@ -158,5 +212,6 @@
 
 
 (comment
-  @re-frame.db/app-db
+  (->> @re-frame.db/app-db
+       :users)
   )

@@ -24,3 +24,8 @@
  ::user
   (fn [db]
    (:user db)))
+
+(re-frame/reg-sub
+ ::forms
+ (fn [db [_ k]]
+   (get-in db [:forms k])))

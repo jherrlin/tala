@@ -4,7 +4,6 @@
             [compojure.core :refer [GET defroutes]]
             [compojure.route :refer [resources]]
             [config.core :refer [env]]
-
             [medley.core :refer [random-uuid dissoc-in]]
             [org.httpkit.server :as hk]
             [ring.middleware.reload :refer [wrap-reload]]
@@ -63,17 +62,18 @@
                      (clojure.pprint/pprint data)
                      (case m-type
                        :init-user (do
-                                    (async/>! ws-ch {:m-type :init-user :users (->> @app-state
-                                                                                    :users
-                                                                                    (mapv #(dissoc % :ws-ch)))})
+                                    (async/>! ws-ch {:m-type :server->init-user
+                                                     :users (->> @app-state
+                                                                 :users
+                                                                 (mapv #(dissoc % :ws-ch)))})
                                     (swap! app-state update :users conj (assoc data :ws-ch ws-ch))
-                                    (async/>! main-chan {:m-type :new-user :data data}))
+                                    (async/>! main-chan (assoc data :m-type :new-user)))
                        :channel-message (async/>! main-chan message))
                      (recur))
                    (do
                      (let [user (->> @app-state :users (filter #(= (:ws-ch %) ws-ch)) first)]
                        (async/untap main-mult client-tap)
-                       (async/>! main-chan {:m-type :user-left :data (dissoc user :ws-ch)})
+                       (async/>! main-chan (-> user (dissoc :ws-ch) (assoc :m-type :user-left)))
                        (swap! app-state update :users (fn [x] (remove #(= % user) x))))))))))))
 
 

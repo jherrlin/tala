@@ -12,10 +12,14 @@
 
 (goog-define ws-url "ws://localhost:3449/ws")
 (defonce send-chan (async/chan))
+(declare handle-message)
 
+
+;; Websocket stuff
 (defn send-msg
   [msg]
   (async/put! send-chan msg))
+
 
 (defn- send-msgs
   [svr-chan]
@@ -23,6 +27,28 @@
     (when-let [msg (async/<! send-chan)]
       (async/>! svr-chan msg)
       (recur))))
+
+;; bryt ut till ett egen ns
+;; multimethod här istället för case
+;; spec som validerar messages
+(defn- receive-msgs
+  [svr-chan]
+  (async/go-loop []
+    (if-let [{:keys [message]} (<! svr-chan)]
+      (do
+        (handle-message message)
+        (recur))
+      (println "Websocket closed"))))
+
+
+(defn setup-websockets! []
+  (async/go
+    (let [{:keys [ws-channel error]} (async/<! (ws-ch ws-url))]
+      (if error
+        (println "Something went wrong with the websocket!")
+        (do
+          (send-msgs ws-channel)
+          (receive-msgs ws-channel))))))
 
 
 (defmulti handle-message (fn [data] (:m-type data)))
@@ -56,9 +82,10 @@
     (if (s/valid? k data)
       (do
         (re-frame/dispatch [::remove-user data])
-        (re-frame/dispatch [::add-message {:datetime (js/Date.)
+        (re-frame/dispatch [::add-message {:id (medley/random-uuid)
+                                           :datetime (js/Date.)
                                            :msg (str "User left: " (get-in data [:username]))
-                                           :msg-id (medley/random-uuid)}]))
+                                           :username "Server"}]))
       (s/explain k data))))
 
 
@@ -80,42 +107,6 @@
 
 (defmethod handle-message :default [data]
   (js/console.log "john-debug handle-message default:" data))
-
-
-
-;; bryt ut till ett egen ns
-;; multimethod här istället för case
-;; spec som validerar messages
-(defn- receive-msgs
-  [svr-chan]
-  (async/go-loop []
-    (if-let [{:keys [message]} (<! svr-chan)]
-      (do
-        (js/console.log "john-debug receive-msgs:" message)
-        (handle-message message)
-        #_(case (:m-type message)
-          :init-user (handle-server-message message)
-          :new-user (do (re-frame/dispatch [::add-user (:data message)])
-                        (re-frame/dispatch [::add-message {:datetime (js/Date.)
-                                                            :msg (str "User joined: " (get-in message [:data :user-name]))
-                                                            :msg-id (medley/random-uuid)}]))
-          :user-left (do (re-frame/dispatch [::remove-user (:data message)])
-                         (re-frame/dispatch [::add-message {:datetime (js/Date.)
-                                                            :msg (str "User left: " (get-in message [:data :user-name]))
-                                                            :msg-id (medley/random-uuid)}]))
-          :channel-message (re-frame/dispatch [::add-message (:data message)])
-          :test (js/console.log "john-debug:" (clj->js (:data message))))
-        (recur))
-      (println "Websocket closed"))))
-
-(defn setup-websockets! []
-  (async/go
-    (let [{:keys [ws-channel error]} (async/<! (ws-ch ws-url))]
-      (if error
-        (println "Something went wrong with the websocket!")
-        (do
-          (send-msgs ws-channel)
-          (receive-msgs ws-channel))))))
 
 
 (re-frame/reg-cofx

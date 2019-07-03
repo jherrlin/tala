@@ -13,6 +13,29 @@
    (:messages db)))
 
 (re-frame/reg-sub
+ ::direct-message-reciever
+ (fn [db]
+   (:direct-message-reciever db)))
+
+(re-frame/reg-sub
+ ::direct-messages
+ (fn [db]
+   (->> db
+        :direct-messages
+        (filter #(= #{(get-in db [:user :id])
+                      (get-in db [:direct-message-reciever :id])}
+                    #{(get-in % [:to-user :id])
+                      (get-in % [:from-user :id])})))))
+
+
+(comment
+  (def db @re-frame.db/app-db)
+  (->>
+       :users)
+  )
+
+
+(re-frame/reg-sub
  ::users
  (fn [db]
    (->> db

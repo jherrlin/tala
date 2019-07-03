@@ -43,6 +43,20 @@
 
 ;; (random-uuid)
 
+(defn user-by-ws-ch [ws-ch]
+  (->> @app-state
+       :users
+       (filter #(= (:ws-ch %) ws-ch))
+       first))
+
+(defn user-by-id [user-id]
+  (->> @app-state
+       :users
+       (filter #(= (:user-id %) user-id))
+       first))
+
+
+
 (defn ws-handler
   [req]
   (with-channel req ws-ch
@@ -58,16 +72,21 @@
                           (async/close! ws-ch)))
           ws-ch ([{:keys [message]}]
                  (if message
-                   (let [{:keys [m-type data]} message]
-                     (clojure.pprint/pprint data)
-                     (case m-type
-                       :init-user (do
-                                    (async/>! ws-ch {:m-type :server->init-user
-                                                     :users (->> @app-state
-                                                                 :users
-                                                                 (mapv #(dissoc % :ws-ch)))})
-                                    (swap! app-state update :users conj (assoc data :ws-ch ws-ch))
-                                    (async/>! main-chan (assoc data :m-type :new-user)))
+                   (do
+                     (clojure.pprint/pprint message)
+                     (case (:m-type message)
+                       :init-user->server (do
+                                            (async/>! ws-ch {:m-type :server->init-user
+                                                             :users (->> @app-state
+                                                                         :users
+                                                                         (mapv #(dissoc % :ws-ch)))})
+                                            (swap! app-state update :users conj (assoc message :ws-ch ws-ch))
+                                            (async/>! main-chan (assoc message :m-type :new-user)))
+                       :direct-message (do
+                                         (println message)
+                                         (if-let [user (user-by-id (get-in message [:to-user :user-id]))]
+                                             (async/>! (:ws-ch user) message)
+                                             (println "User not found!")))
                        :channel-message (async/>! main-chan message))
                      (recur))
                    (do

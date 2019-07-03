@@ -20,18 +20,22 @@
     [:div
      [:h4 "Messages"]
      (into [:ul] ;; användare mapv istället för for
-           (for [{:keys [msg-id msg datetime]} messages]
-             ^{:key msg-id} [:li (str (datetime-format datetime) " | " msg)]))]))
+           (for [{:keys [id msg datetime username]} messages]
+             ^{:key id} [:li
+                             (str (datetime-format datetime) " | " username " > "  msg)]))]))
 
 (defn users-view []
   (let [users @(re-frame/subscribe [::subs/users])
         user @(re-frame/subscribe [::subs/user])]
     [:div
      [:h4 (str "Me: " (:username user))]
-     [:h4 "Users:"]
+     [:h4 "Active users:"]
      (into [:ul] ;; användare mapv istället för for
-           (for [{:keys [user-id username]} users]
-             ^{:key user-id} [:li username]))]))
+           (for [{:keys [user-id username] :as u} users]
+             ^{:key user-id} [:li
+                              [:a {:href "#"
+                                   :on-click #(do (dispatch [::events/direct-message-reciever u ]))}
+                               username]]))]))
 
 (defn input-view []
   (let [internal-state (reagent.core/atom "")]
@@ -62,7 +66,22 @@
   [:div
    [components/input-form :login-form "login" #(dispatch [::events/login-user %1])]])
 
+(defn direct-message-view []
+  (let [direct-message-reciever @(re-frame/subscribe [::subs/direct-message-reciever])
+        direct-messages (re-frame/subscribe [::subs/direct-messages])]
+    [:div
+     [:a {:href "#"
+          :on-click #(dispatch  [::events/active-panel :chat])} "Back"]
+     [:h2 "Direct messages with: " (:username direct-message-reciever)]
+     (into [:ul] ;; användare mapv istället för for
+           (for [{:keys [id from-user to-user msg datetime]} @direct-messages]
+             ^{:key id} [:li
+                             (str (datetime-format datetime) " | " (:username from-user) " -> " (:username to-user) " | " msg)]))
+     [components/input-form :send-direct-message "Send" #(dispatch [::events/send-direct-msg %1])]
+     ]))
+
 (defn app-container []
   (case @(re-frame/subscribe [::subs/active-panel])
     :login [login-view]
-    :chat [chat-view]))
+    :chat [chat-view]
+    :direct-message [direct-message-view]))

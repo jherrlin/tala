@@ -16,6 +16,8 @@
   (s/keys :req-un [::id
                    ::username]))
 (s/def ::users (s/coll-of ::user :kind vector?))
+(s/def ::from-user ::user)
+(s/def ::to-user ::user)
 
 (s/def ::direct-message
   (s/keys
@@ -49,6 +51,17 @@
                    ::user-id
                    ::username
                    ::datetime]))
+
+
+(s/def ::channel-message
+  (s/keys :req-un [::id
+                   ::m-type
+                   ::user-id
+                   ::username
+                   ::datetime
+                   ::msg]))
+
+
 
 
 

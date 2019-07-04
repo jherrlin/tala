@@ -41,7 +41,13 @@
    (->> db
         :users
         (remove #(= (:user-id %)
-                    (->> db :user :user-id))))))
+                    (->> db :user :user-id)))
+        (map (fn [x] (assoc x :direct-message-count (->> db
+                                                         :direct-messages
+                                                         (filter (fn [m]
+                                                                   (= (:id x)
+                                                                      (get-in m [:from-user :id]))))
+                                                         count)))))))
 
 (re-frame/reg-sub
  ::user

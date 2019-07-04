@@ -31,11 +31,12 @@
      [:h4 (str "Me: " (:username user))]
      [:h4 "Active users:"]
      (into [:ul] ;; användare mapv istället för for
-           (for [{:keys [user-id username] :as u} users]
+           (for [{:keys [user-id username direct-message-count] :as u} users]
              ^{:key user-id} [:li
                               [:a {:href "#"
                                    :on-click #(dispatch [::events/direct-message-reciever u])}
-                               username]]))]))
+                               (str username (when (< 0 direct-message-count)
+                                               (str " (" direct-message-count ")")))]]))]))
 
 (defn chat-view []
   [:div

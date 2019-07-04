@@ -22,17 +22,13 @@
 (comment
   @app-state
 
-  (async/put! (->> @app-state
-                   :users
-                   (filter #(= (:user-name %) "John"))
-                   first
-                   :ws-ch)
-              {:m-type :test :data {:user-name "test"
-                                    :user-id "1"}})
-
-
-  (async/put! main-chan {:m-type :test :data {:user-name "test"
-                                              :user-id "1"}})
+  ;; Send message to alla clients
+  (async/put! main-chan {:id (random-uuid)
+                         :m-type :channel-message
+                         :user-id (random-uuid)
+                         :username "Server"
+                         :datetime (java.util.Date.)
+                         :msg "Hey from server!"})
 
 
 
@@ -40,14 +36,12 @@
 
 
 
-
-;; (random-uuid)
-
 (defn user-by-ws-ch [ws-ch]
   (->> @app-state
        :users
        (filter #(= (:ws-ch %) ws-ch))
        first))
+
 
 (defn user-by-id [user-id]
   (->> @app-state

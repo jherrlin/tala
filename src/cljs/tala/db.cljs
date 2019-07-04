@@ -9,5 +9,4 @@
    :messages []
    :direct-message-reciever nil
    :direct-messages []
-   :forms {}
-   :tala.view.login/input nil})
+   :forms {}})

@@ -12,6 +12,7 @@
 (s/def ::msg string?)
 (s/def ::username string?)
 (s/def ::user-id ::id)
+(s/def ::channel-id ::id)
 (s/def ::user
   (s/keys :req-un [::id
                    ::username]))
@@ -57,6 +58,7 @@
   (s/keys :req-un [::id
                    ::m-type
                    ::user-id
+                   ::channel-id
                    ::username
                    ::datetime
                    ::msg]))

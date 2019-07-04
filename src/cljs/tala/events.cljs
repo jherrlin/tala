@@ -72,6 +72,8 @@
         (re-frame/dispatch [::add-user data])
         (re-frame/dispatch [::add-message {:id (medley/random-uuid)
                                            :datetime (js/Date.)
+                                           :m-type :channel-message
+                                           :channel-id #uuid "5e865999-00af-403f-8b88-ee5d10f921e1"
                                            :msg (str "User joined: " (get-in data [:username]))
                                            :username "Server"}]))
       (s/explain k data))))
@@ -84,6 +86,8 @@
         (re-frame/dispatch [::remove-user data])
         (re-frame/dispatch [::add-message {:id (medley/random-uuid)
                                            :datetime (js/Date.)
+                                           :m-type :channel-message
+                                           :channel-id #uuid "5e865999-00af-403f-8b88-ee5d10f921e1"
                                            :msg (str "User left: " (get-in data [:username]))
                                            :username "Server"}]))
       (s/explain k data))))
@@ -99,7 +103,7 @@
 (defmethod handle-message :direct-message [data]
   (let [k ::message-spec/direct-message]
     (if (s/valid? k data)
-      (re-frame/dispatch [::add-direct-message data])
+      (re-frame/dispatch [::add-message data])
       (s/explain k data))))
 
 
@@ -155,15 +159,12 @@
  (fn [db [_ message]]
    (update db :messages conj message)))
 
-(re-frame/reg-event-db
- ::add-direct-message
- (fn [db [_ message]]
-   (update db :direct-messages conj message)))
 
 (re-frame/reg-event-db
  ::forms
  (fn [db [_ k value]]
    (assoc-in db [:forms k] value)))
+
 
 (re-frame/reg-event-db
  ::add-user
@@ -171,11 +172,13 @@
    (-> db
        (update :users conj user))))
 
+
 (re-frame/reg-event-db
  ::active-panel
  (fn [db [_ active-panel]]
    (-> db
        (assoc :active-panel active-panel))))
+
 
 (re-frame/reg-event-db
  ::direct-message-reciever
@@ -212,9 +215,8 @@
                :msg message}]
      (if (s/valid? ::message-spec/direct-message data)
        {::ws-send data
-        :db (update db :direct-messages conj data)}
-       (do (s/explain ::message-spec/direct-message data)
-         {:db db})))))
+        :db (update db :messages conj data)}
+       (s/explain ::message-spec/direct-message data)))))
 
 (re-frame/reg-event-fx
  ::send-channal-msg
@@ -225,6 +227,7 @@
    (let [data {:id uuid
                :m-type :channel-message
                :user-id (:user-id user)
+               :channel-id #uuid "5e865999-00af-403f-8b88-ee5d10f921e1"
                :username (:username user)
                :datetime now
                :msg message}]
@@ -247,9 +250,7 @@
        {::ws-init nil
         ::ws-send data
         :db (assoc db :user data :active-panel :chat)}
-       (do
-         (s/explain ::message-spec/init-user->server data)
-         {:db db})))))
+       (s/explain ::message-spec/init-user->server data)))))
 
 
 (re-frame/reg-event-fx

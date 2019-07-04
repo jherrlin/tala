@@ -9,30 +9,32 @@
    [tala.components :as components]
    [tala.utils :refer [silent]]))
 
+
 (defn datetime-format [datetiem]
   (when (inst? datetiem)
     (.format
      (goog.i18n.DateTimeFormat. "yyyy-MM-dd HH:MM")
      datetiem)))
 
+
 (defn message-view []
-  (let [messages @(re-frame/subscribe [::subs/messages])]
+  (let [messages (re-frame/subscribe [::subs/channel-messages])]
     [:div
      [:h4 "Messages"]
-     (into [:ul] ;; användare mapv istället för for
-           (for [{:keys [id msg datetime username]} messages]
-             ^{:key id} [:li
-                             (str (datetime-format datetime) " | " username " > "  msg)]))]))
+     (into [:ul {:style {:list-style "none"}}] ;; användare mapv istället för for
+           (for [{:keys [id msg datetime username]} @messages]
+             ^{:key id} [:li (str (datetime-format datetime) " | " username " > "  msg)]))]))
+
 
 (defn users-view []
-  (let [users @(re-frame/subscribe [::subs/users])
+  (let [users @(re-frame/subscribe [::subs/active-users])
         user @(re-frame/subscribe [::subs/user])]
     [:div
      [:h4 (str "Me: " (:username user))]
      [:h4 "Active users:"]
      (into [:ul] ;; användare mapv istället för for
            (for [{:keys [user-id username direct-message-count] :as u} users]
-             ^{:key user-id} [:li
+             ^{:key user-id} [:li {:style {:list-style "none"}}
                               [:a {:href "#"
                                    :on-click #(dispatch [::events/direct-message-reciever u])}
                                (str username (when (< 0 direct-message-count)
@@ -49,6 +51,7 @@
 (defn login-view []
   [components/input-form :login-form "login" "Enter username" #(dispatch [::events/login-user %1])])
 
+
 (defn direct-message-view []
   (let [direct-message-reciever @(re-frame/subscribe [::subs/direct-message-reciever])
         direct-messages (re-frame/subscribe [::subs/direct-messages])]
@@ -61,6 +64,7 @@
              ^{:key id} [:li
                              (str (datetime-format datetime) " | " (:username from-user) " -> " (:username to-user) " | " msg)]))
      [components/input-form :send-direct-message "Send" "Direct message" #(dispatch [::events/send-direct-msg %1])]]))
+
 
 (defn app-container []
   (case @(re-frame/subscribe [::subs/active-panel])

@@ -19,6 +19,11 @@
 (s/def ::users (s/coll-of ::user :kind vector?))
 (s/def ::from-user ::user)
 (s/def ::to-user ::user)
+(s/def ::name string?)
+(s/def ::channel
+  (s/keys :req-un [::id
+                   ::name]))
+(s/def ::channels (s/coll-of ::channel :kind vector?))
 
 (s/def ::direct-message
   (s/keys
@@ -38,7 +43,8 @@
 
 (s/def ::server->init-user
   (s/keys :req-un [::m-type
-                   ::users]))
+                   ::users
+                   ::channels]))
 
 (s/def ::new-user
   (s/keys :req-un [::id
@@ -51,6 +57,12 @@
   (s/keys :req-un [::m-type
                    ::user-id
                    ::username
+                   ::datetime]))
+
+(s/def ::new-channel
+  (s/keys :req-un [::id
+                   ::m-type
+                   ::name
                    ::datetime]))
 
 

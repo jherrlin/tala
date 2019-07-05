@@ -29,6 +29,12 @@
 
 
 (re-frame/reg-sub
+ ::channels
+ (fn [db]
+   (:channels db)))
+
+
+(re-frame/reg-sub
  ::current-channel-id
  (fn [db]
    (:current-channel-id db)))
@@ -82,6 +88,20 @@
                (assoc u :direct-message-count (->> messages
                                                    (filter #(message-belongs-to-us? u user %))
                                                    count)))))))
+
+(re-frame/reg-sub
+ ::available-channels
+ :<- [::channels]
+ :<- [::current-channel-id]
+ (fn [[channels current-channel-id]]
+  (mapv
+   (fn [{:keys [id] :as channel}]
+     (if (= id current-channel-id)
+       (assoc channel :active true)
+       channel))
+   channels)))
+
+
 
 
 (re-frame/reg-sub

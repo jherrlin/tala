@@ -14,9 +14,12 @@
 (defonce main-chan (async/chan))
 (defonce main-mult (async/mult main-chan))
 (def app-state (atom {:users []
-                      :channels {#uuid "5e865999-00af-403f-8b88-ee5d10f921e1"
-                                 {:name "default"
-                                  :id #uuid "5e865999-00af-403f-8b88-ee5d10f921e1"}}}))
+                      :channels [{:id #uuid "5e865999-00af-403f-8b88-ee5d10f921e1"
+                                  :name "default"}
+                                 {:id (random-uuid)
+                                  :name "channel 1"}
+                                 {:id (random-uuid)
+                                  :name "channel 2"}]}))
 
 
 (comment
@@ -71,6 +74,8 @@
                      (case (:m-type message)
                        :init-user->server (do
                                             (async/>! ws-ch {:m-type :server->init-user
+                                                             :channels (->> @app-state
+                                                                            :channels)
                                                              :users (->> @app-state
                                                                          :users
                                                                          (mapv #(dissoc % :ws-ch)))})

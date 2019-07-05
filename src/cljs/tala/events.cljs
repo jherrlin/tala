@@ -36,6 +36,7 @@
   (async/go-loop []
     (if-let [{:keys [message]} (<! svr-chan)]
       (do
+        (js/console.log "john-debug receive-msgs:" message)
         (handle-message message)
         (recur))
       (println "Websocket closed"))))
@@ -61,7 +62,9 @@
 (defmethod handle-message :server->init-user [data]
   (let [k ::message-spec/server->init-user]
     (if (s/valid? k data)
-      (re-frame/dispatch [::add-users (:users data)])
+      (do
+        (re-frame/dispatch [::add-users (:users data)])
+        (re-frame/dispatch [::add-channels (:channels data)]))
       (s/explain k data))))
 
 
@@ -172,6 +175,12 @@
    (-> db
        (update :users conj user))))
 
+(re-frame/reg-event-db
+ ::add-channel
+ (fn [db [_ channel]]
+   (-> db
+       (update :channels conj channel))))
+
 
 (re-frame/reg-event-db
  ::active-panel
@@ -200,6 +209,20 @@
      db
      (update db :users concat users))))
 
+
+(re-frame/reg-event-db
+ ::change-channel
+ (fn [db [_ channel-id]]
+   (assoc db :current-channel-id channel-id)))
+
+
+(re-frame/reg-event-db
+ ::add-channels
+ (fn [db [_ channels]]
+   (if (empty? channels)
+     db
+     (update db :channels concat channels))))
+
 (re-frame/reg-event-fx
  ::send-direct-msg
  [(re-frame/inject-cofx ::uuid)
@@ -227,7 +250,7 @@
    (let [data {:id uuid
                :m-type :channel-message
                :user-id (:user-id user)
-               :channel-id #uuid "5e865999-00af-403f-8b88-ee5d10f921e1"
+               :channel-id (:current-channel-id db)
                :username (:username user)
                :datetime now
                :msg message}]

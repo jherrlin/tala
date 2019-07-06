@@ -59,57 +59,60 @@
   (js/console.log "handle-message :default:" data))
 
 
-(defmethod handle-message :server->init-user [data]
-  (let [k ::message-spec/server->init-user]
+(defn -handle-message [speckey body data]
+  (let [k speckey]
     (if (s/valid? k data)
-      (do
-        (re-frame/dispatch [::add-users (:users data)])
-        (re-frame/dispatch [::add-channels (:channels data)]))
+      (body data)
       (s/explain k data))))
+
+
+(defmethod handle-message :server->init-user [data]
+  (-handle-message
+   ::message-spec/server->init-user
+   (fn [data]
+     (re-frame/dispatch [::add-users (:users data)])
+     (re-frame/dispatch [::add-channels (:channels data)]))
+   data))
 
 
 (defmethod handle-message :new-user [data]
-  (let [k ::message-spec/new-user]
-    (if (s/valid? k data)
-      (do
-        (re-frame/dispatch [::add-user data])
-        (re-frame/dispatch [::add-message {:id (medley/random-uuid)
-                                           :datetime (js/Date.)
-                                           :m-type :channel-message
-                                           :channel-id #uuid "5e865999-00af-403f-8b88-ee5d10f921e1"
-                                           :msg (str "User joined: " (get-in data [:username]))
-                                           :username "Server"}]))
-      (s/explain k data))))
+  (-handle-message
+   ::message-spec/new-user
+   (fn [data]
+     (re-frame/dispatch [::add-user data])
+     (re-frame/dispatch [::add-message {:id (medley/random-uuid)
+                                        :datetime (js/Date.)
+                                        :m-type :channel-message
+                                        :channel-id #uuid "5e865999-00af-403f-8b88-ee5d10f921e1"
+                                        :msg (str "User joined: " (get-in data [:username]))
+                                        :username "Server"}]))
+   data))
 
 
 (defmethod handle-message :user-left [data]
-  (let [k ::message-spec/new-user]
-    (if (s/valid? k data)
-      (do
-        (re-frame/dispatch [::remove-user data])
-        (re-frame/dispatch [::add-message {:id (medley/random-uuid)
-                                           :datetime (js/Date.)
-                                           :m-type :channel-message
-                                           :channel-id #uuid "5e865999-00af-403f-8b88-ee5d10f921e1"
-                                           :msg (str "User left: " (get-in data [:username]))
-                                           :username "Server"}]))
-      (s/explain k data))))
+  (-handle-message
+   ::message-spec/new-user
+   (fn [data]
+     (re-frame/dispatch [::remove-user data])
+     (re-frame/dispatch [::add-message {:id (medley/random-uuid)
+                                        :datetime (js/Date.)
+                                        :m-type :channel-message
+                                        :channel-id #uuid "5e865999-00af-403f-8b88-ee5d10f921e1"
+                                        :msg (str "User left: " (get-in data [:username]))
+                                        :username "Server"}]))
+   data))
 
 
 (defmethod handle-message :channel-message [data]
-  (let [k ::message-spec/channel-message]
-    (if (s/valid? k data)
-      (re-frame/dispatch [::add-message data])
-      (s/explain k data))))
+  (-handle-message ::message-spec/channel-message
+                   (fn [data] (re-frame/dispatch [::add-message data]))
+                   data))
 
 
 (defmethod handle-message :direct-message [data]
-  (let [k ::message-spec/direct-message]
-    (if (s/valid? k data)
-      (re-frame/dispatch [::add-message data])
-      (s/explain k data))))
-
-
+  (-handle-message ::message-spec/direct-message
+                   (fn [data] (re-frame/dispatch [::add-message data]))
+                   data))
 
 
 (defmethod handle-message :default [data]

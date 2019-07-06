@@ -6,8 +6,7 @@
    [re-frame.core :refer [dispatch] :as re-frame]
    [tala.events :as events]
    [tala.subs :as subs]
-   [tala.components :as components]
-   [tala.utils :refer [silent]]))
+   [tala.components :as components]))
 
 
 (defn datetime-format [datetiem]

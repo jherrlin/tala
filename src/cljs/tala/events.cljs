@@ -232,22 +232,27 @@
      db
      (update db :channels concat channels))))
 
+
 (re-frame/reg-event-fx
  ::send-direct-msg
  [(re-frame/inject-cofx ::uuid)
   (re-frame/inject-cofx ::now)
   (re-frame/inject-cofx ::user)
-  (re-frame/inject-cofx ::to-user)]
- (fn [{:keys [db now uuid user to-user] :as cofx} [_ message]]
+  (re-frame/inject-cofx ::to-user)
+  (re-frame/inject-cofx ::session-id)]
+ (fn [{:keys [db now uuid user to-user session-id] :as cofx} [_ message]]
    (let [data {:id uuid
+               :session-id session-id
                :m-type :direct-message
                :from-user user
                :to-user to-user
                :datetime now
                :msg message}]
      (if (s/valid? ::message-spec/direct-message data)
-       {::ws-send data
-        :db (update db :messages conj data)}
+       (do
+         (info "sent direct message")
+         {::ws-send data
+          :db (update db :messages conj data)})
        (error
         (s/explain-str ::message-spec/direct-message data))))))
 
@@ -256,9 +261,11 @@
  ::send-channal-msg
  [(re-frame/inject-cofx ::uuid)
   (re-frame/inject-cofx ::now)
-  (re-frame/inject-cofx ::user)]
- (fn [{:keys [db now uuid user] :as cofx} [_ message]]
+  (re-frame/inject-cofx ::user)
+  (re-frame/inject-cofx ::session-id)]
+ (fn [{:keys [db now uuid user session-id] :as cofx} [_ message]]
    (let [data {:id uuid
+               :session-id session-id
                :m-type :channel-message
                :user-id (:user-id user)
                :channel-id (:current-channel-id db)
@@ -266,7 +273,9 @@
                :datetime now
                :msg message}]
      (if (s/valid? ::message-spec/channel-message data)
-       {::ws-send data}
+       (do
+         (info "sent channel message")
+         {::ws-send data})
        (error
         (s/explain-str ::message-spec/channel-message data))))))
 
@@ -274,9 +283,12 @@
 (re-frame/reg-event-fx
  ::login-user
  [(re-frame/inject-cofx ::uuid)
-  (re-frame/inject-cofx ::now)]
- (fn [{:keys [db now uuid] :as cofx} [_ username]]
+  (re-frame/inject-cofx ::now)
+  (re-frame/inject-cofx ::session-id)]
+ (fn [{:keys [db now uuid session-id] :as cofx} [_ username]]
+   (info "user login: " username)
    (let [data {:id uuid
+               :session-id session-id
                :m-type :init-user->server
                :user-id uuid
                :username username
@@ -288,18 +300,6 @@
        (s/explain ::message-spec/init-user->server data)))))
 
 
-(re-frame/reg-event-fx
- ::send-to-channel
- [(re-frame/inject-cofx ::uuid)
-  (re-frame/inject-cofx ::now)
-  (re-frame/inject-cofx ::user-id)]
- (fn [{:keys [db now uuid] :as cofx} [_ message]]
-   (let [msg {uuid {:message-id uuid
-                    :user-id (->> db :user vals first :user-id)
-                    :channel-id (:current-channel db)
-                    :message message}}]
-     {::ws-send {:m-type :channel-message
-                 :msg msg}})))
 
 
 (comment

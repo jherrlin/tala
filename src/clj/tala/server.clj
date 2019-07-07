@@ -120,7 +120,8 @@
                      (let [user (->> @app-state :users (filter #(= (:ws-ch %) ws-ch)) first)]
                        (async/untap main-mult client-tap)
                        (async/>! main-chan (-> user (dissoc :ws-ch) (assoc :m-type :user-left)))
-                       (swap! app-state update :users (fn [x] (remove #(= % user) x))))))))))))
+                       (swap! app-state update :users (fn [x] (remove #(= % user) x)))
+                       (info "client with session-id:" (:session-id user) "left"))))))))))
 
 
 

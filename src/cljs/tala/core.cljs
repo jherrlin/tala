@@ -27,4 +27,5 @@
   (tala.log/setup-log-ws!)
   (re-frame/dispatch-sync [::events/initialize-db])
   (dev-setup)
-  (mount-root))
+  (mount-root)
+  (info "client connected"))

@@ -10,13 +10,18 @@
 
 
 
+
 (defonce log-filename "/tmp/tala.log")
 (defonce log-chan (async/chan 8))
 
 
 (timbre/merge-config!
- {:appenders {:println {:enabled? false}  ;; dont print logs to repl
-              :spit (appenders/spit-appender {:fname log-filename})}})
+ {:timestamp-opts (assoc timbre/default-timestamp-opts
+                         :timezone (java.util.TimeZone/getTimeZone "Europe/Stockholm"))
+  :appenders {:println {:enabled? false}  ;; dont print logs to repl
+              :spit (appenders/spit-appender {:fname log-filename
+                                              :hostname_ "server"
+                                              :instant java.util.Date})}})
 
 
 ;; log handler thread
@@ -43,10 +48,10 @@
             (async/put! log-chan message)
             (recur))
           (do
-            (async/put! log-chan " left")
             (async/close! ws-ch)))))))
 
 
 (comment
   (async/put! log-chan "Hejsan")
+  (info "hejsan")
   )

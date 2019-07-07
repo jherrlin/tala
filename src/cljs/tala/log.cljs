@@ -1,5 +1,7 @@
 (ns tala.log
   (:require [chord.client :refer [ws-ch]]
+            [re-frame.core]
+            [tala.subs]
             [cljs.core.async :as async :include-macros true]
             [taoensso.timbre :as timbre
              :refer-macros [log  trace  debug  info  warn  error  fatal  report
@@ -37,6 +39,8 @@
                                                  :min-level nil,
                                                  :rate-limit nil,
                                                  :output-fn :inherit,
-                                                 :fn (fn self [data]
+                                                 :fn (fn ws-send-fn [data]
                                                        (let [{:keys [output_]} data]
-                                                         (send-ws-log! (force output_))))}}})
+                                                         (send-ws-log! (str @(re-frame.core/subscribe [::tala.subs/session-id])
+                                                                            " "
+                                                                            (force output_)))))}}})

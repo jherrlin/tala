@@ -10,7 +10,7 @@
        (get-in message [:from-user :id])}))
 
 (re-frame/reg-sub
- :session-id
+ ::session-id
  (fn [db]
    (:session-id db)))
 

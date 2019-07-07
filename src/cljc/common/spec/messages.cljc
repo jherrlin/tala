@@ -4,6 +4,7 @@
 
 
 (s/def ::id medley.core/uuid?)
+(s/def ::session-id medley.core/uuid?)
 (s/def ::m-type #{:init-user->server :server->init-user :new-user :user-left
                   :direct-message :channel-message :server-message})
 (s/def ::datetime inst?)
@@ -30,6 +31,7 @@
 (s/def ::direct-message
   (s/keys
    :req-un [::id
+            ::session-id
             ::m-type
             ::datetime
             ::from-user
@@ -38,6 +40,7 @@
 
 (s/def ::init-user->server
   (s/keys :req-un [::id
+                   ::session-id
                    ::m-type
                    ::user-id
                    ::username
@@ -50,19 +53,23 @@
 
 (s/def ::new-user
   (s/keys :req-un [::id
-                   ::m-type
+                   ::session-id
                    ::user-id
+                   ::m-type
                    ::username
                    ::datetime]))
 
 (s/def ::user-left
-  (s/keys :req-un [::m-type
+  (s/keys :req-un [::id
+                   ::session-id
                    ::user-id
+                   ::m-type
                    ::username
                    ::datetime]))
 
 (s/def ::new-channel
   (s/keys :req-un [::id
+                   ::session-id
                    ::m-type
                    ::name
                    ::datetime]))
@@ -70,6 +77,7 @@
 
 (s/def ::channel-message
   (s/keys :req-un [::id
+                   ::session-id
                    ::m-type
                    ::user-id
                    ::channel-id

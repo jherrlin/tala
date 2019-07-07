@@ -65,7 +65,7 @@
     (if (s/valid? k data)
       (body data)
       (error
-       (s/explain k data)))))
+       (s/explain-str k data)))))
 
 
 (defmethod handle-message :server->init-user [data]
@@ -133,6 +133,13 @@
   ::to-user
   (fn [{:keys [db] :as cofx} _]
     (assoc cofx :to-user (:direct-message-reciever db))))
+
+
+(re-frame/reg-cofx
+  ::session-id
+  (fn [{:keys [db] :as cofx} _]
+    (assoc cofx :session-id (:session-id db))))
+
 
 (re-frame/reg-cofx
  ::now
@@ -241,7 +248,9 @@
      (if (s/valid? ::message-spec/direct-message data)
        {::ws-send data
         :db (update db :messages conj data)}
-       (s/explain ::message-spec/direct-message data)))))
+       (error
+        (s/explain-str ::message-spec/direct-message data))))))
+
 
 (re-frame/reg-event-fx
  ::send-channal-msg

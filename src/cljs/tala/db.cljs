@@ -1,4 +1,5 @@
-(ns tala.db)
+(ns tala.db
+  (:require [medley.core :as medley]))
 
 (def default-db
   {:active-panel :login

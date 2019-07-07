@@ -9,6 +9,11 @@
      #{(get-in message [:to-user :id])
        (get-in message [:from-user :id])}))
 
+(re-frame/reg-sub
+ :session-id
+ (fn [db]
+   (:session-id db)))
+
 
 (re-frame/reg-sub
  ::active-panel

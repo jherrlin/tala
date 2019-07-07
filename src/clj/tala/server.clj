@@ -7,8 +7,18 @@
             [medley.core :refer [random-uuid dissoc-in]]
             [org.httpkit.server :as hk]
             [ring.middleware.reload :refer [wrap-reload]]
-            [ring.util.response :refer [resource-response]])
+            [ring.util.response :refer [resource-response]]
+            [tala.log]
+            [taoensso.timbre :as timbre
+             :refer [log  trace  debug  info  warn  error  fatal  report
+                     logf tracef debugf infof warnf errorf fatalf reportf
+                     spy get-env]]
+            [taoensso.timbre.appenders.core :as appenders]
+            )
   (:gen-class))
+
+
+(info "Server starting...")
 
 
 (defonce main-chan (async/chan))
@@ -22,6 +32,12 @@
                                   :name "channel 2"}]}))
 
 
+
+
+
+
+
+
 (comment
   @app-state
 
@@ -32,6 +48,18 @@
                          :username "Server"
                          :datetime (java.util.Date.)
                          :msg "Hey from server!"})
+
+  ;; Add/remove reciever
+  (def -app-state (atom {:available-recievers {}}))
+  (def new-reciever (let [id (random-uuid)]
+                      {id {:id id
+                           :type :user
+                           :name (apply str (take 10 (repeatedly (fn [] (char (+ (rand 26) 97))))))}}))
+  (swap! -app-state update :available-recievers merge new-reciever)  ;; add
+  (swap! -app-state update :available-recievers dissoc #uuid "3a4d2231-d2e6-405c-a8cb-842a22a83d3e") ;; remove
+  @-app-state
+
+
 
 
 
@@ -97,9 +125,11 @@
 
 
 
+
 (defroutes routes
   (GET "/" [] (resource-response "index.html" {:root "public"}))
   (GET "/ws" [] ws-handler)
+  (GET "/log" [] tala.log/log-handler)
   (resources "/"))
 
 

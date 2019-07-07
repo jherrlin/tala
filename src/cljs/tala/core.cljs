@@ -1,10 +1,15 @@
 (ns tala.core
   (:require
-   [reagent.core :as reagent]
    [re-frame.core :as re-frame]
-   [tala.events :as events]
-   [tala.views :as views]
+   [reagent.core :as reagent]
    [tala.config :as config]
+   [tala.events :as events]
+   [tala.log]
+   [tala.views :as views]
+   [taoensso.timbre :as timbre
+             :refer-macros [log  trace  debug  info  warn  error  fatal  report
+                            logf tracef debugf infof warnf errorf fatalf reportf
+                            spy get-env]]
    ))
 
 
@@ -19,6 +24,9 @@
                   (.getElementById js/document "app")))
 
 (defn ^:export init []
+  (tala.log/setup-log-ws!)
   (re-frame/dispatch-sync [::events/initialize-db])
   (dev-setup)
-  (mount-root))
+  (mount-root)
+  (tala.log/setup-log-ws!)
+  (info "client joined"))

@@ -11,6 +11,7 @@
                  [ring "1.7.1"]
                  [jarohen/chord "0.8.1"]
                  [medley "1.2.0"]
+                 [com.taoensso/timbre "4.10.0"]
                  ]
 
   :plugins [[lein-cljsbuild "1.1.7"]]

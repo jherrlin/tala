@@ -7,7 +7,11 @@
    [day8.re-frame.tracing :refer-macros [fn-traced defn-traced]]
    [medley.core :as medley]
    [re-frame.core :as re-frame]
-   [tala.db :as db]))
+   [tala.db :as db]
+   [taoensso.timbre :as timbre
+    :refer-macros [log  trace  debug  info  warn  error  fatal  report
+                   logf tracef debugf infof warnf errorf fatalf reportf
+                   spy get-env]]))
 
 
 (goog-define ws-url "ws://localhost:3449/ws")
@@ -15,7 +19,6 @@
 (declare handle-message)
 
 
-;; Websocket stuff
 (defn send-msg
   [msg]
   (async/put! send-chan msg))
@@ -28,9 +31,7 @@
       (async/>! svr-chan msg)
       (recur))))
 
-;; bryt ut till ett egen ns
-;; multimethod här istället för case
-;; spec som validerar messages
+
 (defn- receive-msgs
   [svr-chan]
   (async/go-loop []
@@ -63,7 +64,8 @@
   (let [k speckey]
     (if (s/valid? k data)
       (body data)
-      (s/explain k data))))
+      (error
+       (s/explain k data)))))
 
 
 (defmethod handle-message :server->init-user [data]
@@ -114,9 +116,6 @@
                    (fn [data] (re-frame/dispatch [::add-message data]))
                    data))
 
-
-(defmethod handle-message :default [data]
-  (js/console.log "john-debug handle-message default:" data))
 
 
 (re-frame/reg-cofx
@@ -259,7 +258,8 @@
                :msg message}]
      (if (s/valid? ::message-spec/channel-message data)
        {::ws-send data}
-       (s/explain ::message-spec/channel-message data)))))
+       (error
+        (s/explain-str ::message-spec/channel-message data))))))
 
 
 (re-frame/reg-event-fx

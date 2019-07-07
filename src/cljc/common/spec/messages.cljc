@@ -9,6 +9,7 @@
 (s/def ::datetime inst?)
 (s/def ::from-user ::id)
 (s/def ::to-user ::id)
+(s/def ::name string?)
 (s/def ::msg string?)
 (s/def ::username string?)
 (s/def ::user-id ::id)
@@ -19,11 +20,12 @@
 (s/def ::users (s/coll-of ::user :kind vector?))
 (s/def ::from-user ::user)
 (s/def ::to-user ::user)
-(s/def ::name string?)
 (s/def ::channel
   (s/keys :req-un [::id
                    ::name]))
 (s/def ::channels (s/coll-of ::channel :kind vector?))
+
+
 
 (s/def ::direct-message
   (s/keys

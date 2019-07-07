@@ -6,7 +6,12 @@
    [re-frame.core :refer [dispatch] :as re-frame]
    [tala.events :as events]
    [tala.subs :as subs]
-   [tala.components :as components]))
+   [tala.components :as components]
+   [taoensso.timbre :as timbre
+    :refer-macros [log  trace  debug  info  warn  error  fatal  report
+                   logf tracef debugf infof warnf errorf fatalf reportf
+                   spy get-env]]))
+
 
 
 (defn datetime-format [datetiem]
@@ -95,6 +100,7 @@
 
 
 (defn app-container []
+
   (case @(re-frame/subscribe [::subs/active-panel])
     :login [login-view]
     :chat [chat-view]
